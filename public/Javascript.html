@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width" />
+    <title>It's my form</title>
+    <link href="style.css" rel="stylesheet" type="text/css" />
+  </head>
+
+  <body>
+    <nav>
+      <div class="logo">
+        <h2>My form</h2>
+      </div>
+      <div class="links">
+        <a href="./index.html">Regular</a>
+        <a href="./Javascript.html">Javascript</a>
+      </div>
+    </nav>
+    <main>
+      <section>
+        <form>
+          <h3>Javascript:</h3>
+          <div class="label_input">
+            <label for="game">Enter Data</label>
+            <input
+              class="form_input"
+              type="text"
+              name="user"
+              id="game"
+              autocomplete="false"
+            />
+            <small class="form-alert"></small>
+          </div>
+          <button type="submit" class="submit_btn">Submit</button>
+        </form>
+
+        <div class="result"></div>
+      </section>
+    </main>
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/axios/0.21.1/axios.min.js"
+      integrity="sha512-bZS47S7sPOxkjU/4Bt0zrhEtWx0y0CRkhEp8IckzK+ltifIIE9EMIMTuT/mEzoIMewUINruDBIR/jJnbguonqQ=="
+      crossorigin="anonymous"
+      referrerpolicy="no-referrer"
+    ></script>
+    <script>
+      const result = document.querySelector(".result");
+      const fetchUsers = async () => {
+        try {
+          const { data } = await axios.get("/api/people");
+
+          const Users = data.map((user) => {
+            return `<div>
+              <h5>${user.name}</h5>
+              <button class="${user.name}" onclick="edithandler(this)">Edit</button>
+              <button class= "${user.name}" onclick="deletehandler(this)">Delete</button>
+              </div>`;
+          });
+
+          result.innerHTML = Users.join("");
+        } catch (err) {
+          result.innerHTML = `<h5 class= "alert">Data couldn't be fetched</h5>`;
+        }
+      };
+      fetchUsers();
+
+      // submitting the form
+      const input = document.querySelector(".form_input");
+      const button = document.querySelector(".submit_btn");
+      const formAlert = document.querySelector(".form-alert");
+
+      //post request
+      button.addEventListener("click", async (e) => {
+        e.preventDefault();
+        const nameValue = input.value;
+        try {
+          const { data } = await axios.post("/api/people", {
+            person: nameValue,
+          });
+          const div = document.createElement("div");
+          const h5 = document.createElement("h5");
+          h5.textContent = data.person;
+
+          const button = document.createElement("button");
+          button.textContent = "Delete";
+          button.className = data.person;
+
+          div.appendChild(h5);
+          div.appendChild(button);
+          // const butt = button.toString();
+          // console.log(butt);
+          // div.textContent = ;
+          // console.log(div);
+
+          formAlert.textContent = "";
+          result.appendChild(div);
+        } catch (error) {
+          console.log(error.response.data.msg);
+          formAlert.textContent = error.response.data.msg;
+        }
+        input.value = "";
+      });
+
+      //delete request
+      function deletehandler(btn) {
+        const cls = btn.className;
+        const divv = btn.parentElement;
+
+        axios
+          .delete(`/api/people/${cls}`)
+          .then(() => {
+            divv.remove();
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+
+      //edit request
+      function edithandler(btn) {
+        const cls_edit_btn = btn.className;
+        const divv = btn.parentElement;
+        //creating an input field
+        const input = document.createElement("input");
+        input.value = cls_edit_btn;
+        //creating a submit button
+        const button = document.createElement("button");
+        button.textContent = "Submit";
+        //onclick function
+        const att = document.createAttribute("onclick");
+        att.value = "editsubmithandler(this)";
+        button.setAttributeNode(att);
+
+        //class attribute for further actions
+        const att2 = document.createAttribute("class");
+        att2.value = `${cls_edit_btn}`;
+        button.setAttributeNode(att2);
+
+        //removing all the elements of divv
+        //cannot remove using nodechilds, it created problems when we try to edit again
+        btn.previousElementSibling.remove();
+        btn.nextElementSibling.remove();
+        //have to remove btn later, otherwise btn.previousElementSibling and other will be null
+        btn.remove();
+
+        //wrong way of doing it:
+        // divv.childNodes[1].remove();
+        // divv.childNodes[2].remove();
+        // divv.childNodes[3].remove();
+
+        divv.appendChild(input);
+        divv.appendChild(button);
+      }
+
+      function editsubmithandler(btn) {
+        const divv = btn.parentElement;
+        //accesing old class
+        const cls_submit_btn = btn.className;
+        //accessing new value to be passed in body of axios put
+        const input_element = btn.previousElementSibling;
+
+        const namess = input_element.value;
+
+        //so far so good
+        axios
+          .put(`/api/people/update/?user=${cls_submit_btn}`, { person: namess })
+          .then((data) => {
+            const new_name = data.data.data.name;
+            // console.log(new_name);
+            //h5 element
+            const h5 = document.createElement("h5");
+            h5.textContent = new_name;
+            //edit button element
+            const button = document.createElement("button");
+            button.textContent = "Edit";
+            //edit button's class
+            const att1 = document.createAttribute("class");
+            att1.value = `${new_name}`;
+            button.setAttributeNode(att1);
+            //edit button's onclick event handler
+            const att2 = document.createAttribute("onclick");
+            att2.value = "edithandler(this)";
+            button.setAttributeNode(att2);
+
+            //delete button element
+            const button2 = document.createElement("button");
+            button2.textContent = "Delete";
+            //delete button's class, these atrributes should be explicity cloned
+            const att3 = document.createAttribute("class");
+            att3.value = `${new_name}`;
+            button2.setAttributeNode(att3);
+
+            //delete button's onclick event handler
+            const att4 = document.createAttribute("onclick");
+            att4.value = "deletehandler(this)";
+            button2.setAttributeNode(att4);
+
+            //removing nput field and submit button
+            input_element.remove();
+            btn.remove();
+
+            //adding h5, button, button2 in the divv element
+            divv.appendChild(h5);
+            divv.appendChild(button);
+            divv.appendChild(button2);
+          })
+          .catch((err) => {
+            console.log(err);
+          });
+      }
+    </script>
+  </body>
+</html>

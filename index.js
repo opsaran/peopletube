@@ -5,6 +5,8 @@ const app = express() //creating an instance of express server
 
 const port = process.env.PORT || 3000
 
+//seeve static files:
+app.use(express.static('./public'))
 //parse json
 app.use(express.json())
 //parse form data
